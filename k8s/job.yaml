@@ -1,0 +1,80 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: database-scaffold
+  namespace: database-scaffolding
+  labels:
+    app.kubernetes.io/name: knapscen-scaffold-database
+    app.kubernetes.io/component: job
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  # Job will be marked as completed after successful execution
+  completions: 1
+  parallelism: 1
+  # Clean up completed jobs after 24 hours
+  ttlSecondsAfterFinished: 86400
+  # Restart policy for failed jobs
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knapscen-scaffold-database
+        app.kubernetes.io/component: job
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: scaffold-database
+        # Replace with your actual Docker image name and tag
+        # If using Docker Hub: docker.io/yourusername/knapscen-scaffold-database:latest
+        # If using GitHub Container Registry: ghcr.io/yourusername/knapscen-scaffold-database:latest
+        image: knapscen-scaffold-database:latest
+        imagePullPolicy: Always
+        
+        # Environment variables from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: scaffold-config
+        - secretRef:
+            name: scaffold-credentials
+        
+        # Resource limits and requests
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        
+        # Security context - run as non-root user
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        
+        # Health checks
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import scaffold_database; print('OK')"
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      
+      # Security context for the entire pod
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      
+      # Service account (optional, but recommended)
+      serviceAccountName: default

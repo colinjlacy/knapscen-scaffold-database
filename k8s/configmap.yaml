@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scaffold-config
+  namespace: database-scaffolding
+  labels:
+    app.kubernetes.io/name: knapscen-scaffold-database
+    app.kubernetes.io/component: config
+data:
+  DB_HOST: "mysql-service"  # Change this to your MySQL service name or external host
+  DB_PORT: "3306"
+  DB_NAME: "scaffold_db"    # Change this to your target database name

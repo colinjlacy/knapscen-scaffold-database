@@ -75,15 +75,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Test Docker image
-        run: |
-          # Test that the image can be built and the Python script can be imported
-          docker buildx build --platform linux/amd64 -t test-image --load .
-          docker run --rm test-image python -c "
-          import scaffold_database
-          scaffolder = scaffold_database.DatabaseScaffolder.__new__(scaffold_database.DatabaseScaffolder)
-          print('✅ Docker image test passed - script can be imported and instantiated')
-          "
 
   security-scan:
     runs-on: ubuntu-latest

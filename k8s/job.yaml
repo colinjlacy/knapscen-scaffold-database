@@ -24,10 +24,9 @@ spec:
       restartPolicy: Never
       containers:
       - name: scaffold-database
-        # Replace with your actual Docker image name and tag
-        # If using Docker Hub: docker.io/yourusername/knapscen-scaffold-database:latest
-        # If using GitHub Container Registry: ghcr.io/yourusername/knapscen-scaffold-database:latest
-        image: knapscen-scaffold-database:latest
+        # GitHub Container Registry image
+        # Replace 'yourusername/yourrepo' with your actual GitHub repository path
+        image: ghcr.io/yourusername/yourrepo/knapscen-scaffold-database:latest
         imagePullPolicy: Always
         
         # Environment variables from ConfigMap

@@ -12,7 +12,7 @@ database:
 
 # Docker Image Configuration
 image:
-  repository: "docker.io/yourusername/knapscen-scaffold-database"
+  repository: "ghcr.io/yourusername/yourrepo/knapscen-scaffold-database"
   tag: "v1.0.0"
   pullPolicy: "Always"
 

@@ -179,7 +179,8 @@ The `k8s/` directory contains:
 - Access to a Kubernetes cluster
 - kubectl configured to access your cluster
 - MySQL database accessible from the cluster
-- Docker image pushed to a registry accessible by your cluster
+- Docker image built and pushed to GitHub Container Registry (ghcr.io)
+- For private repositories: Configure cluster access to GitHub Container Registry
 
 ### Quick Deployment
 
@@ -210,9 +211,9 @@ The `k8s/` directory contains:
 
 3. **Update the Docker image:**
 
-   Edit `k8s/job.yaml` to point to your Docker image:
+   Edit `k8s/job.yaml` to point to your GitHub Container Registry image:
    ```yaml
-   image: docker.io/yourusername/knapscen-scaffold-database:latest
+   image: ghcr.io/yourusername/yourrepo/knapscen-scaffold-database:latest
    ```
 
 4. **Deploy using kubectl:**
@@ -224,6 +225,26 @@ The `k8s/` directory contains:
    ```bash
    kubectl apply -k k8s/
    ```
+
+### GitHub Container Registry Access
+
+For public repositories, no additional configuration is needed. For private repositories, you'll need to create an image pull secret:
+
+```bash
+# Create a personal access token with 'read:packages' scope on GitHub
+kubectl create secret docker-registry ghcr-login-secret \
+  --docker-server=ghcr.io \
+  --docker-username=your-github-username \
+  --docker-password=your-github-token \
+  --namespace=database-scaffolding
+
+# Then add imagePullSecrets to the job.yaml:
+# spec:
+#   template:
+#     spec:
+#       imagePullSecrets:
+#       - name: ghcr-login-secret
+```
 
 ### Alternative: Using Kustomize
 
@@ -244,7 +265,7 @@ For more advanced deployments, you can customize the resources:
 
    images:
    - name: knapscen-scaffold-database
-     newName: your-registry.com/knapscen-scaffold-database
+     newName: ghcr.io/yourusername/yourrepo/knapscen-scaffold-database
      newTag: v1.0.0
 
    patchesStrategicMerge:
@@ -293,15 +314,54 @@ The repository includes a GitHub Actions workflow that:
 
 - Builds multi-architecture Docker images (AMD64 and ARM64)
 - Runs security scans with Trivy
-- Pushes images to Docker Hub on main branch
+- Pushes images to GitHub Container Registry (ghcr.io) on main branch
 - Tests image functionality
 
-### Required GitHub Secrets
+### GitHub Actions Configuration
 
-To use the GitHub Actions workflow, set these repository secrets:
+The workflow supports two authentication methods for GitHub Container Registry:
 
-- `DOCKER_USERNAME`: Your Docker Hub username
-- `DOCKER_PASSWORD`: Your Docker Hub password or access token
+#### Option 1: Using GITHUB_TOKEN (Default)
+The workflow can use the automatically provided `GITHUB_TOKEN`. This requires:
+- Repository has `packages: write` permission enabled
+- Your repository settings allow Actions to create packages
+
+#### Option 2: Using Personal Access Token (Recommended)
+For more reliable access, create a Personal Access Token:
+
+1. **Create a PAT**:
+   - Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Generate new token with these scopes:
+     - `write:packages` (to push container images)
+     - `read:packages` (to pull container images)
+
+2. **Add the token as a repository secret**:
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Add a new repository secret named `GHCR_TOKEN`
+   - Paste your Personal Access Token as the value
+
+The workflow will automatically use `GHCR_TOKEN` if available, falling back to `GITHUB_TOKEN` if not.
+
+#### Troubleshooting Authentication Issues
+
+If you encounter authentication errors when pushing to GHCR:
+
+1. **Check repository permissions**:
+   - Go to repository Settings → Actions → General
+   - Under "Workflow permissions", ensure "Read and write permissions" is selected
+   - Or check "Allow GitHub Actions to create and approve pull requests"
+
+2. **Verify package creation permissions**:
+   - The first time pushing to GHCR, the package may need manual approval
+   - Check your repository's Packages tab after the first workflow run
+
+3. **For organizations**: 
+   - Organization settings may restrict package creation
+   - Contact your organization admin to enable package creation for your repository
+
+4. **Create a Personal Access Token** (most reliable solution):
+   - Follow the PAT creation steps above
+   - This bypasses most repository and organization restrictions
 
 ## Error Handling
 

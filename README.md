@@ -35,8 +35,18 @@ A Python script that scaffolds a MySQL database schema with tables for corporate
 ### Prerequisites
 
 - Python 3.7+
-- MySQL server
+- MySQL server (5.7+ or 8.0+ supported)
 - Access to create databases and tables
+- MySQL server accessible from your deployment environment
+
+### MySQL Compatibility
+
+This script supports modern MySQL authentication methods:
+- `caching_sha2_password` (MySQL 8.0+ default)
+- `mysql_native_password` (MySQL 5.7 default)
+- `sha256_password`
+
+The `cryptography` package is included to handle encrypted authentication methods used by MySQL 8.0+.
 
 ### Installation
 
@@ -362,6 +372,33 @@ If you encounter authentication errors when pushing to GHCR:
 4. **Create a Personal Access Token** (most reliable solution):
    - Follow the PAT creation steps above
    - This bypasses most repository and organization restrictions
+
+## Troubleshooting
+
+### Database Connection Issues
+
+**Error: "cryptography package is required for sha256_password or caching_sha2_password auth methods"**
+- This error occurs with MySQL 8.0+ servers using modern authentication
+- Solution: Ensure `cryptography` is installed (included in requirements.txt)
+- Rebuild your Docker image or reinstall dependencies
+
+**Error: "Access denied for user"**
+- Verify database credentials in your ConfigMap and Secret
+- Ensure the database user has sufficient privileges:
+  ```sql
+  GRANT ALL PRIVILEGES ON your_database.* TO 'your_user'@'%';
+  FLUSH PRIVILEGES;
+  ```
+
+**Error: "Can't connect to MySQL server"**
+- Check if MySQL server is accessible from your Kubernetes cluster
+- Verify the DB_HOST in your ConfigMap points to the correct service/hostname
+- For external databases, ensure network connectivity and firewall rules
+
+**Error: "Unknown database"**
+- The database specified in DB_NAME doesn't exist
+- Create the database first or update DB_NAME to an existing database
+- The script creates tables but not the database itself
 
 ## Error Handling
 

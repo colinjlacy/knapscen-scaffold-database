@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: database-scaffold
-  namespace: database-scaffolding
+  namespace: default
   labels:
     app.kubernetes.io/name: knapscen-scaffold-database
     app.kubernetes.io/component: job
@@ -26,15 +26,24 @@ spec:
       - name: scaffold-database
         # GitHub Container Registry image
         # Replace 'yourusername/yourrepo' with your actual GitHub repository path
-        image: ghcr.io/yourusername/yourrepo/knapscen-scaffold-database:latest
+        image: ghcr.io/colinjlacy/knapscen-scaffold-database/knapscen-scaffold-database:latest
         imagePullPolicy: Always
         
         # Environment variables from ConfigMap
         envFrom:
         - configMapRef:
             name: scaffold-config
-        - secretRef:
-            name: scaffold-credentials
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: bassline-boogie-credentials
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bassline-boogie-credentials
+              key: password
         
         # Resource limits and requests
         resources:
